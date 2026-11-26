@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026 AI 레시피 전자책</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm, school-publication; the book is the hero, the reader chrome stays quiet
+   IDEA: an open book lying on a navy desk — pages turn sideways like a real 사례집
+   PICTURE: the A4 pages themselves, large, as paper with a soft shadow; cover is drawn in the book's own navy
+   COLOUR and TYPE: book navy #1F4E8C dominant, paper white, tint #EEF3FA support, orange #B4471A accent for the page marker; Noto Sans KR
+   LAYOUT: thin top bar (title, 목차, counter) · page stage with scroll-snap · bottom bar with prev/next and slider */
+:root{color-scheme:light dark;--desk:light-dark(#dfe6f0,#0d1a2c);--bar:light-dark(#ffffff,#13233a);--ink:light-dark(#14243a,#e8eef7);--mut:light-dark(#5b6b80,#9fb0c7);--navy:#1F4E8C;--tint:#EEF3FA;--acc:#B4471A;--line:light-dark(#d4dce8,#24384f)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--desk);color:var(--ink);font:16px/1.55 "Noto Sans KR",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid #5b9bff;outline-offset:2px}
+header,footer{background:var(--bar);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:8px max(2vw,12px);flex:none}
+footer{border-bottom:0;border-top:1px solid var(--line)}
+.brand{font-weight:900;font-size:17px;letter-spacing:-.01em;white-space:nowrap}
+.brand b{color:var(--navy)}:root[data-theme=dark] .brand b{color:#8db6f0}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .brand b{color:#8db6f0}}
+.sp{flex:1}
+.btn{min-height:44px;min-width:44px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:transparent;display:inline-flex;align-items:center;gap:6px;font-size:15px}
+.btn:hover{background:color-mix(in srgb,var(--navy) 10%,transparent)}
+.btn[disabled]{opacity:.35;cursor:default}
+.count{font-size:14px;color:var(--mut);white-space:nowrap;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1;accent-color:var(--navy);height:44px}
+#stage{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none}
+#stage::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;scroll-snap-align:center;display:flex;align-items:center;justify-content:center;gap:2px;padding:18px 12px}
+.page{position:relative;aspect-ratio:1240/1754;height:min(100%,calc((100vw - 40px) * 1.4145));background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12),0 12px 34px rgba(10,30,60,.22);overflow:hidden;color:#14243a;container-type:size}
+.spread .page:first-child{box-shadow:-1px 1px 2px rgba(0,0,0,.12),-10px 12px 30px rgba(10,30,60,.2),inset -14px 0 18px -14px rgba(0,0,0,.18)}
+.spread .page:last-child{box-shadow:1px 1px 2px rgba(0,0,0,.12),10px 12px 30px rgba(10,30,60,.2),inset 14px 0 18px -14px rgba(0,0,0,.14)}
+.page img{width:100%;height:100%;display:block;object-fit:contain}
+.page a.hot{position:absolute;border-radius:3px;background:rgba(31,78,140,0);transition:background .2s}
+.page a.hot:hover,.page a.hot:focus-visible{background:rgba(31,78,140,.14)}
+/* cover */
+.cover{background:var(--navy);color:#fff;display:flex;flex-direction:column;padding:9cqh 9cqw 7cqh}
+.cover .top{font-size:2.3cqh;font-weight:500;opacity:.8;border-top:.5cqh solid #fff;padding-top:1.6cqh}
+.cover h1{font-size:12cqh;line-height:1;font-weight:900;margin:8cqh 0 2.4cqh;letter-spacing:-.03em}
+.cover h1 span{display:block;font-size:4.2cqh;line-height:1.3;font-weight:500;letter-spacing:0;margin-bottom:3cqh;opacity:.85}
+.cover .tag{line-height:1.45;font-size:3.2cqh;font-weight:500;letter-spacing:.02em;opacity:1;padding-top:2.4cqh;border-top:1px solid rgba(255,255,255,.35);display:inline-block}
+.cover p{font-size:2.6cqh;line-height:1.55;margin:0;opacity:.92;max-width:80%}
+.cover .art{flex:1;position:relative;margin:4cqh 0}
+.cover .art svg{position:absolute;inset:0;width:100%;height:100%}
+.cover .bot{font-size:2cqh;display:flex;justify-content:flex-end;align-items:baseline;opacity:.85}
+.cover .bot .school{font-size:2.8cqh;font-weight:700;opacity:1}
+/* toc */
+.toc{padding:8cqh 8cqw;display:flex;flex-direction:column}
+.toc .hd{border-top:.5cqh solid var(--navy);padding-top:1.6cqh;font-size:1.9cqh;color:#5b6b80;display:flex;justify-content:space-between}
+.toc h2{font-size:4.6cqh;margin:3.5cqh 0 .6cqh;font-weight:900;letter-spacing:-.02em}
+.toc .note{font-size:1.7cqh;color:#5b6b80;margin:0 0 2.4cqh}
+.toc .gap{height:3cqh}
+.toc section{margin-bottom:3.2cqh}
+.toc h3{display:flex;align-items:baseline;gap:1.6cqw;font-size:2.5cqh;margin:0 0 .6cqh;padding:.9cqh 0;border-bottom:.3cqh solid var(--navy);color:var(--navy)}
+.toc h3 b{font-size:2.5cqh;min-width:4cqw}
+.toc h3 small,.toc h4 small{font-size:1.5cqh;font-weight:500;color:#5b6b80}
+.toc h4{font-size:1.75cqh;margin:1cqh 0 .2cqh;color:#14243a}
+.toc ol{list-style:none;margin:0;padding:0}
+.toc li button,.toc li .row{all:unset;display:grid;grid-template-columns:5.5cqw 1fr auto;align-items:baseline;gap:1.4cqw;width:100%;padding:.9cqh 0;border-bottom:1px solid #e3e9f1}
+.toc li button{cursor:pointer}
+.toc li button:hover .t{color:var(--navy);text-decoration:underline}
+.toc li button:focus-visible{outline:3px solid #5b9bff}
+.toc .n{font-size:1.65cqh;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+.toc .t{font-size:1.65cqh;line-height:1.35;color:#14243a}
+.toc .t em{font-style:normal;color:#5b6b80;font-size:1.45cqh}
+.toc li button .t{font-weight:500}
+.toc li.off .n{color:#8aa0bd}
+.toc .pg{font-size:1.5cqh;color:var(--navy);font-weight:700;font-variant-numeric:tabular-nums}
+#wrap{flex:1;position:relative;display:flex;min-height:0}
+.side{position:absolute;top:50%;left:max(1vw,8px);transform:translateY(-50%);width:52px;height:52px;border-radius:50%;border:0;background:color-mix(in srgb,var(--bar) 88%,transparent);box-shadow:0 4px 16px rgba(10,30,60,.22);display:grid;place-items:center;cursor:pointer;z-index:3;transition:opacity .2s,transform .15s}
+.side.r{left:auto;right:max(1vw,8px)}
+.side svg{width:26px;height:26px;fill:none;stroke:var(--navy);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.side:hover{transform:translateY(-50%) scale(1.08)}
+.side[disabled]{opacity:0;pointer-events:none}
+@media(max-width:600px){.side{width:40px;height:40px;opacity:.85}.side svg{width:20px;height:20px}}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .side svg{stroke:#8db6f0}}
+:root[data-theme=dark] .side svg{stroke:#8db6f0}
+/* drawer */
+#drawer{position:fixed;inset:0;background:rgba(8,18,32,.45);display:none;z-index:5}
+#drawer.on{display:block}
+#drawer .panel{position:absolute;top:0;left:0;bottom:0;width:min(360px,88vw);background:var(--bar);padding:18px;overflow:auto;box-shadow:8px 0 30px rgba(0,0,0,.25)}
+#drawer h3{margin:4px 0 12px;font-size:18px}
+#drawer li.ar{font-size:13px;font-weight:700;color:var(--mut);padding:14px 10px 4px}
+#drawer ul{list-style:none;margin:0;padding:0}
+#drawer li button{all:unset;cursor:pointer;display:block;width:100%;padding:12px 10px;border-radius:10px}
+#drawer li button:hover,#drawer li button:focus-visible{background:color-mix(in srgb,var(--navy) 12%,transparent)}
+#drawer li small{display:block;color:var(--mut);font-size:13px}
+.sample{font-size:13px;color:var(--mut);white-space:nowrap}
+@media(max-width:600px){.sample,.brand small{display:none}.btn .lbl{display:none}}
+@media(prefers-reduced-motion:reduce){#stage{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header>
+  <button class="btn" id="menu" aria-label="목차 열기"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 4h14M2 9h14M2 14h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="lbl">목차</span></button>
+  <div class="brand"><b>2026 AI 레시피</b> <small>· AI 에듀테크 활용·앱 제작 사례집</small></div>
+  <div class="sp"></div>
+  <span class="sample">사례 36편</span>
+</header>
+<div id="wrap"><main id="stage" tabindex="-1" aria-label="전자책 페이지"></main><button class="side" id="sPrev" aria-label="이전 페이지"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><button class="side r" id="sNext" aria-label="다음 페이지"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>
+<footer>
+  <button class="btn" id="prev" aria-label="이전 페이지">◀<span class="lbl">이전</span></button>
+  <input type="range" id="slider" min="0" value="0" aria-label="페이지 이동">
+  <span class="count" id="count"></span>
+  <button class="btn" id="next" aria-label="다음 페이지"><span class="lbl">다음</span>▶</button>
+</footer>
+<div id="drawer" role="dialog" aria-label="목차"><div class="panel"><h3>목차</h3><ul id="dlist"></ul></div></div>
+
+<script>
+{
+const CASES = [{"no": "01", "kind": "수업 사례", "title": "필사타자 · 교과 타자 게임", "sub": "정보 처리와 관리", "pages": [{"img": "p1/d-1.jpg", "links": []}, {"img": "p1/c01-1.jpg", "links": []}, {"img": "p1/c01-2.jpg", "links": []}, {"img": "p1/c01-3.jpg", "links": [[78.71, 25.87, 8.78, 1.55, "https://onmine-alt.github.io/typing-game/"]]}, {"img": "p1/c01-4.jpg", "links": []}], "pre": 1}, {"no": "02", "kind": "수업 사례", "title": "사이언스 덱스 · 화석 탐험 도감", "sub": "과학", "pages": [{"img": "p1/c02-1.jpg", "links": []}, {"img": "p1/c02-2.jpg", "links": [[75.58, 74.93, 11.83, 1.55, "https://kyong2ssam.github.io/fossil-dex/"]]}, {"img": "p1/c02-3.jpg", "links": []}]}, {"no": "03", "kind": "수업 사례", "title": "생태계 평형 시뮬레이터", "sub": "과학", "pages": [{"img": "p1/c03-1.jpg", "links": []}, {"img": "p1/c03-2.jpg", "links": [[76.88, 77.54, 10.09, 1.55, "https://kyong2ssam.github.io/ecosystem_simulator/"]]}, {"img": "p1/c03-3.jpg", "links": []}]}, {"no": "04", "kind": "수업 사례", "title": "일본어 읽기 미션 게임", "sub": "일본어", "pages": [{"img": "p1/c04-1.jpg", "links": []}, {"img": "p1/c04-2.jpg", "links": [[76.98, 74.57, 9.04, 1.55, "https://2danwon.vercel.app/"]]}, {"img": "p1/c04-3.jpg", "links": []}]}, {"no": "05", "kind": "수업 사례", "title": "신나는 화폐 여행 보드게임", "sub": "특수학급", "pages": [{"img": "p1/c05-1.jpg", "links": []}, {"img": "p1/c05-2.jpg", "links": [[76.9, 86.01, 9.2, 1.55, "https://claude.ai/chat/24555cec-0643-4138-bad4-c878952e2497?artifact=bd0ea94b-ffb5-491e-9253-519242832a6c"]]}, {"img": "p1/c05-3.jpg", "links": []}, {"img": "p1/c05-4.jpg", "links": []}]}, {"no": "06", "kind": "수업 사례", "title": "명화, 빛으로 다시 태어나다 · 스테인드글라스 색채 기획 도구", "sub": "디자인", "pages": [{"img": "p1/c06-1.jpg", "links": []}, {"img": "p1/c06-2.jpg", "links": []}, {"img": "p1/c06-3.jpg", "links": []}, {"img": "p1/c06-4.jpg", "links": [[45.98, 51.43, 9.2, 1.55, "https://seohacolorclass.netlify.app/"]]}, {"img": "p1/c06-5.jpg", "links": []}]}, {"no": "07", "kind": "업무 사례", "title": "건축일반 수행평가 관리 시스템", "sub": "", "pages": [{"img": "p1/c07-1.jpg", "links": []}, {"img": "p1/c07-2.jpg", "links": []}, {"img": "p1/c07-3.jpg", "links": [[76.2, 31.84, 10.59, 1.55, "https://script.google.com/a/macros/gclass.ice.go.kr/s/AKfycbwDPR8mU1s0dLBr3Oh-Ud87GvECbYw7_RCJiOshCXXXDvC3_7LSfg9BXJ1kJb0tfmCNlQ/exec"]]}, {"img": "p1/c07-4.jpg", "links": []}]}, {"no": "08", "kind": "업무 사례", "title": "교직원 연수 등록 시스템", "sub": "", "pages": [{"img": "p1/c08-1.jpg", "links": []}, {"img": "p1/c08-2.jpg", "links": [[78.56, 61.84, 9.2, 1.55, "https://script.google.com/macros/s/AKfycbwSlg-lU3y91wYbLd0xmjNVUZYDNEHUmzGIbFHcfQdvEnmjXlsgvZCquf_VHKKy3eSEiA/exec"]]}, {"img": "p1/c08-3.jpg", "links": []}, {"img": "p1/c08-4.jpg", "links": []}]}, {"no": "09", "kind": "업무 사례", "title": "당신의 내일을 응원합니다 · 취업지원부 안내 웹앱", "sub": "", "pages": [{"img": "p1/c09-1.jpg", "links": []}, {"img": "p1/c09-2.jpg", "links": [[75.58, 75.0, 11.83, 1.55, "https://indigo520.vercel.app/"]]}, {"img": "p1/c09-3.jpg", "links": []}]}, {"no": "10", "kind": "업무 사례", "title": "진로 상담 설문 · 인천직업교육박람회", "sub": "", "pages": [{"img": "p1/c10-1.jpg", "links": []}, {"img": "p1/c10-2.jpg", "links": []}, {"img": "p1/c10-3.jpg", "links": []}, {"img": "p1/c10-4.jpg", "links": []}, {"img": "p1/c10-5.jpg", "links": []}, {"img": "p1/c10-6.jpg", "links": []}]}, {"no": "11", "kind": "업무 사례", "title": "면접 대비 등록 · 제품디자인과 3학년", "sub": "", "pages": [{"img": "p1/c11-1.jpg", "links": []}, {"img": "p1/c11-2.jpg", "links": [[75.41, 72.08, 12.16, 1.55, "https://script.google.com/a/macros/gclass.ice.go.kr/s/AKfycbzAL1Tqh7t2QKw4n2QopjK20wlvIbRUDzNJXgeestH46kzH_YuQUS1RP8VTr1FQeODX/exec"]]}, {"img": "p1/c11-3.jpg", "links": []}]}, {"no": "12", "kind": "업무 사례", "title": "오늘 뭐 읽지? · NEW BOOK PICK", "sub": "", "pages": [{"img": "p1/c12-1.jpg", "links": []}, {"img": "p1/c12-2.jpg", "links": [[74.32, 78.06, 15.2, 1.55, "https://new-book-pick-doseo-cuceon-aeb.vercel.app/"]]}, {"img": "p1/c12-3.jpg", "links": []}]}, {"no": "13", "kind": "5개 학과 사례", "title": "AI와 함께 설계하는 미래형 주택", "sub": "건축디자인과", "pages": [{"img": "p1/d-2.jpg", "links": []}, {"img": "p1/c13-1.jpg", "links": []}, {"img": "p1/c13-2.jpg", "links": []}, {"img": "p1/c13-3.jpg", "links": []}], "pre": 1}, {"no": "14", "kind": "5개 학과 사례", "title": "빛으로 입히는 도자 문양", "sub": "도예디자인과", "pages": [{"img": "p1/c14-1.jpg", "links": []}, {"img": "p1/c14-2.jpg", "links": [[20.74, 85.24, 16.93, 1.38, "https://www.canvaqr.com/RGXuVH2nrO"], [58.45, 85.24, 24.72, 1.38, "https://drive.google.com/drive/folders/1gO7q-fwfzMeuWrWPMCtf4W5tdabV8Dvh?usp=drive_link"]]}, {"img": "p1/c14-3.jpg", "links": []}]}, {"no": "15", "kind": "5개 학과 사례", "title": "H&B 브랜드 패키지 디자인", "sub": "시각디자인과", "pages": [{"img": "p1/c15-1.jpg", "links": []}, {"img": "p1/c15-2.jpg", "links": []}, {"img": "p1/c15-3.jpg", "links": []}]}, {"no": "16", "kind": "5개 학과 사례", "title": "나를 닮은 캐릭터 피규어", "sub": "제품디자인과", "pages": [{"img": "p1/c16-1.jpg", "links": []}, {"img": "p1/c16-2.jpg", "links": []}, {"img": "p1/c16-3.jpg", "links": []}]}, {"no": "17", "kind": "5개 학과 사례", "title": "AI 융합 패션디자인", "sub": "패션디자인과", "pages": [{"img": "p1/c17-1.jpg", "links": []}, {"img": "p1/c17-2.jpg", "links": [[24.35, 84.22, 21.97, 1.55, "https://m.site.naver.com/2lzCa"]]}, {"img": "p1/c17-3.jpg", "links": []}]}, {"no": "18", "kind": "교과 사례", "title": "AI와 함께 만드는 ‘나를 소개합니다’ 프로젝트", "sub": "정보 처리와 관리", "pages": [{"img": "p2/c18-1.jpg", "links": []}, {"img": "p2/c18-2.jpg", "links": [[73.36, 81.59, 7.71, 1.63, "https://padlet.com/icedukr/1-2-a8mvstyo172hej5s"]]}, {"img": "p2/c18-3.jpg", "links": []}]}, {"no": "19", "kind": "교과 사례", "title": "탄소 중립 에코 스마트 시티 설계", "sub": "통합과학", "pages": [{"img": "p2/c19-1.jpg", "links": []}, {"img": "p2/c19-2.jpg", "links": []}, {"img": "p2/c19-3.jpg", "links": []}]}, {"no": "20", "kind": "교과 사례", "title": "노션으로 잇는 수업·기록·평가", "sub": "통합사회2", "pages": [{"img": "p2/c20-1.jpg", "links": []}, {"img": "p2/c20-2.jpg", "links": []}, {"img": "p2/c20-3.jpg", "links": []}]}, {"no": "21", "kind": "교과 사례", "title": "노트북LM으로 짓는 삶과 인권 수업", "sub": "통합사회2", "pages": [{"img": "p2/c21-1.jpg", "links": []}, {"img": "p2/c21-2.jpg", "links": []}, {"img": "p2/c21-3.jpg", "links": []}]}, {"no": "22", "kind": "교과 사례", "title": "노트북LM으로 만드는 한국사 수업 자료", "sub": "한국사2", "pages": [{"img": "p2/c22-1.jpg", "links": []}, {"img": "p2/c22-2.jpg", "links": []}, {"img": "p2/c22-3.jpg", "links": []}]}, {"no": "23", "kind": "교과 사례", "title": "일제강점기 역사 신문, 영상이 되다", "sub": "한국사2", "pages": [{"img": "p2/c23-1.jpg", "links": []}, {"img": "p2/c23-2.jpg", "links": [[72.32, 69.91, 4.03, 1.55, "https://drive.google.com/file/d/1E3Js638kzXX469TrUWBBQ5skG8ZX8Wje/view?usp=drive_link"], [80.4, 69.91, 4.03, 1.55, "https://drive.google.com/file/d/1f9-jnTe0ZbOOxosWe36XAF1lNEOobt7F/view?usp=drive_link"]]}, {"img": "p2/c23-3.jpg", "links": []}]}, {"no": "24", "kind": "AI 코스웨어", "title": "AI와 함께하는 영어 문해력 점프업", "sub": "영어", "pages": [{"img": "p1/d-3.jpg", "links": []}, {"img": "p2/c24-1.jpg", "links": []}, {"img": "p2/c24-2.jpg", "links": []}, {"img": "p2/c24-3.jpg", "links": []}], "pre": 1}, {"no": "25", "kind": "AI 코스웨어", "title": "AI 코스웨어 수학 레벨-업", "sub": "수학", "pages": [{"img": "p2/c25-1.jpg", "links": []}, {"img": "p2/c25-2.jpg", "links": []}, {"img": "p2/c25-3.jpg", "links": []}]}, {"no": "26", "kind": "AI 동아리 사례", "title": "케냐 소웨토에 보내는 영어 동화책", "sub": "스토리움", "pages": [{"img": "p1/d-4.jpg", "links": []}, {"img": "p2/c26-1.jpg", "links": []}, {"img": "p2/c26-2.jpg", "links": [[24.35, 86.31, 43.43, 1.55, "https://padlet.app/qr-code/1v89xyd7e3pgk6j0?source=dialog"]]}, {"img": "p2/c26-3.jpg", "links": []}], "pre": 1}, {"no": "27", "kind": "AI 동아리 사례", "title": "보드게임 카페에서 시작한 게임 개발", "sub": "보드게임카페", "pages": [{"img": "p2/c27-1.jpg", "links": []}, {"img": "p2/c27-2.jpg", "links": [[14.78, 85.24, 14.99, 1.38, "https://m.site.naver.com/2l8D7"], [70.34, 85.24, 14.8, 1.38, "https://m.site.naver.com/2l8Ey"], [42.48, 85.24, 15.05, 1.38, "https://m.site.naver.com/2l8DT"]]}, {"img": "p2/c27-3.jpg", "links": []}]}, {"no": "28", "kind": "AI 동아리 사례", "title": "AI로 디자인한 우리 학교", "sub": "비주얼디자인멤버스", "pages": [{"img": "p2/c28-1.jpg", "links": []}, {"img": "p2/c28-2.jpg", "links": []}, {"img": "p2/c28-3.jpg", "links": []}]}, {"no": "29", "kind": "AI 동아리 사례", "title": "AI와 함께 디자인하고 나누다", "sub": "패션창업반 체리쉬", "pages": [{"img": "p2/c29-1.jpg", "links": []}, {"img": "p2/c29-2.jpg", "links": []}, {"img": "p2/c29-3.jpg", "links": []}]}, {"no": "30", "kind": "AI 동아리 사례", "title": "너의 이름을 모르는 채로", "sub": "AI씨네마", "pages": [{"img": "p2/c30-1.jpg", "links": []}, {"img": "p2/c30-2.jpg", "links": [[24.35, 84.22, 34.08, 1.55, "https://padlet.com/icedukr/ai-csl0vwxren0velk1"]]}, {"img": "p2/c30-3.jpg", "links": []}]}, {"no": "31", "kind": "AI 동아리 사례", "title": "한 땀 한 땀, AI와 함께", "sub": "AI 티끌모아 바느질 클럽", "pages": [{"img": "p2/c31-1.jpg", "links": []}, {"img": "p2/c31-2.jpg", "links": [[14.77, 87.26, 15.0, 1.38, "https://m.site.naver.com/2lC0d"], [70.22, 87.26, 15.05, 1.38, "https://m.site.naver.com/2luPh"], [42.57, 87.26, 14.89, 1.38, "https://m.site.naver.com/2luLX"]]}, {"img": "p2/c31-3.jpg", "links": []}]}, {"no": "32", "kind": "AI 전문적학습공동체 활동", "title": "디지털설계공작소", "sub": "건축디자인과", "pages": [{"img": "p1/d-5.jpg", "links": []}, {"img": "p2/c32-1.jpg", "links": []}, {"img": "p2/c32-2.jpg", "links": []}, {"img": "p2/c32-3.jpg", "links": []}], "pre": 1}, {"no": "33", "kind": "AI 전문적학습공동체 활동", "title": "AI 갤러리", "sub": "도예디자인과", "pages": [{"img": "p2/c33-1.jpg", "links": []}, {"img": "p2/c33-2.jpg", "links": []}, {"img": "p2/c33-3.jpg", "links": []}]}, {"no": "34", "kind": "AI 전문적학습공동체 활동", "title": "AI·패션스튜디오", "sub": "패션디자인과", "pages": [{"img": "p2/c34-1.jpg", "links": []}, {"img": "p2/c34-2.jpg", "links": [[14.65, 87.26, 15.25, 1.38, "https://m.site.naver.com/2lBbU"], [70.39, 87.26, 14.69, 1.38, "https://m.site.naver.com/2lBlC"], [42.46, 87.26, 15.09, 1.38, "https://m.site.naver.com/2lBnh"]]}, {"img": "p2/c34-3.jpg", "links": []}]}, {"no": "35", "kind": "AI 전문적학습공동체 활동", "title": "AI디어 광고 연구소", "sub": "디자인·사회 교과", "pages": [{"img": "p2/c35-1.jpg", "links": []}, {"img": "p2/c35-2.jpg", "links": [[24.35, 86.23, 20.84, 1.55, "https://total-page.pages.dev/"]]}, {"img": "p2/c35-3.jpg", "links": []}]}, {"no": "36", "kind": "AI 전문적학습공동체 활동", "title": "AI 레시피", "sub": "교사 12명", "pages": [{"img": "p2/c36-1.jpg", "links": []}, {"img": "p2/c36-2.jpg", "links": []}, {"img": "p2/c36-3.jpg", "links": [[18.49, 90.39, 21.45, 1.38, "https://onmine-alt.github.io/typing-game/"], [60.61, 90.39, 20.38, 1.38, "https://kyong2ssam.github.io/fossil-dex/"]]}, {"img": "p1/thanks.jpg", "links": []}]}];
+
+// flat page list: cover, toc, then each case page
+const TOC = [["Ⅰ", "앱 제작", [["수업 사례", [["01", "필사타자 · 교과 타자 게임", "정보 처리와 관리"], ["02", "사이언스 덱스 · 화석 탐험 도감", "과학"], ["03", "생태계 평형 시뮬레이터", "과학"], ["04", "일본어 읽기 미션 게임", "일본어"], ["05", "신나는 화폐 여행 보드게임", "특수학급"], ["06", "명화, 빛으로 다시 태어나다 · 스테인드글라스 색채 기획 도구", "디자인"]]], ["업무 사례", [["07", "건축일반 수행평가 관리 시스템", ""], ["08", "교직원 연수 등록 시스템", ""], ["09", "당신의 내일을 응원합니다 · 취업지원부 안내 웹앱", ""], ["10", "진로 상담 설문 · 인천직업교육박람회", ""], ["11", "면접 대비 등록 · 제품디자인과 3학년", ""], ["12", "오늘 뭐 읽지? · NEW BOOK PICK", ""]]]]], ["Ⅱ", "AI 에듀테크 활용", [["5개 학과 사례", [["13", "AI와 함께 설계하는 미래형 주택", "건축디자인과"], ["14", "빛으로 입히는 도자 문양", "도예디자인과"], ["15", "H&B 브랜드 패키지 디자인", "시각디자인과"], ["16", "나를 닮은 캐릭터 피규어", "제품디자인과"], ["17", "AI 융합 패션디자인", "패션디자인과"]]], ["교과 사례", [["18", "AI와 함께 만드는 ‘나를 소개합니다’ 프로젝트", "정보 처리와 관리"], ["19", "탄소 중립 에코 스마트 시티 설계", "통합과학"], ["20", "노션으로 잇는 수업·기록·평가", "통합사회2"], ["21", "노트북LM으로 짓는 삶과 인권 수업", "통합사회2"], ["22", "노트북LM으로 만드는 한국사 수업 자료", "한국사2"], ["23", "일제강점기 역사 신문, 영상이 되다", "한국사2"]]]]], ["Ⅲ", "AI 코스웨어", [[null, [["24", "AI와 함께하는 영어 문해력 점프업", "영어"], ["25", "AI 코스웨어 수학 레벨-업", "수학"]]]]], ["Ⅳ", "AI 동아리 사례", [[null, [["26", "케냐 소웨토에 보내는 영어 동화책", "스토리움"], ["27", "보드게임 카페에서 시작한 게임 개발", "보드게임카페"], ["28", "AI로 디자인한 우리 학교", "비주얼디자인멤버스"], ["29", "AI와 함께 디자인하고 나누다", "패션창업반 체리쉬"], ["30", "너의 이름을 모르는 채로", "AI씨네마"], ["31", "한 땀 한 땀, AI와 함께", "AI 티끌모아 바느질 클럽"]]]]], ["Ⅴ", "AI 전문적학습공동체 활동", [[null, [["32", "디지털설계공작소", "건축디자인과"], ["33", "AI 갤러리", "도예디자인과"], ["34", "AI·패션스튜디오", "패션디자인과"], ["35", "AI디어 광고 연구소", "디자인·사회 교과"], ["36", "AI 레시피", "교사 12명"]]]]]];
+const pages = [{type:'cover'},{type:'toc',part:0},{type:'toc',part:1},{type:'toc',part:2}];
+const start = {};
+CASES.forEach(c => { start[c.no] = pages.length + (c.pre || 0); c.pages.forEach((p,i) => pages.push({type:'img', c, i, ...p})); });
+const pno = i => i; // printed page number (cover = 0, 목차 = 1)
+
+const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+const coverHTML = () => `<div class="page cover">
+  <div class="top">2026 AI 디지털 활용 선도학교</div>
+  <h1><span>AI 에듀테크 활용<br>앱 제작 사례집</span>AI 레시피</h1>
+  <p class="tag">배우고, 만들고, 엮다</p>
+  <div class="art"><svg viewBox="0 0 400 260" aria-hidden="true">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity=".05"/></linearGradient></defs>
+    <rect x="70" y="60" width="150" height="190" rx="6" fill="url(#g)" stroke="#fff" stroke-opacity=".5"/>
+    <rect x="120" y="30" width="150" height="190" rx="6" fill="url(#g)" stroke="#fff" stroke-opacity=".6"/>
+    <rect x="170" y="0" width="150" height="190" rx="6" fill="#fff" fill-opacity=".95"/>
+    <rect x="186" y="18" width="118" height="6" fill="#1F4E8C"/>
+    <rect x="186" y="40" width="80" height="12" rx="2" fill="#1F4E8C"/>
+    <rect x="186" y="60" width="104" height="6" rx="2" fill="#9fb0c7"/>
+    <rect x="186" y="80" width="118" height="40" rx="3" fill="#EEF3FA"/>
+    <rect x="186" y="130" width="34" height="34" fill="#1F4E8C"/><rect x="190" y="134" width="10" height="10" fill="#fff"/><rect x="206" y="150" width="10" height="10" fill="#fff"/>
+    <rect x="230" y="134" width="74" height="6" rx="2" fill="#9fb0c7"/><rect x="230" y="148" width="54" height="6" rx="2" fill="#9fb0c7"/>
+    <circle cx="330" cy="210" r="34" fill="#B4471A"/><text x="330" y="217" text-anchor="middle" font-size="20" font-weight="900" fill="#fff" font-family="Noto Sans KR">AI</text>
+  </svg></div>
+  <div class="bot"><span class="school">인천디자인고등학교</span></div>
+</div>`;
+
+const TOC_SPLIT = [[[0,[0,1]]],[[1,[0,1]],[2,[0]]],[[3,[0]],[4,[0]]]];
+const tocItem = ([no,t,tag]) => { const has = start[no] !== undefined;
+  return `<li${has?'':' class="off"'}>${has?`<button data-go="${start[no]}">`:'<div class="row">'}<span class="n">${esc(no)}</span><span class="t">${esc(t)}${tag?` <em>${esc(tag)}</em>`:''}</span><span class="pg">${has?pno(start[no])+'쪽':''}</span>${has?'</button>':'</div>'}</li>`; };
+const tocHTML = part => `<div class="page toc">
+  <div class="hd"><span>2026 AI 레시피</span><span>목차 ${part+1}/3</span></div>
+  ${part===0?'<h2>목차</h2><p class="note">제목을 누르면 해당 사례로 이동합니다.</p>':'<div class="gap"></div>'}
+  ${TOC_SPLIT[part].map(([ai,gi,cont]) => { const [r,name,all] = TOC[ai]; const n = all.reduce((a,g)=>a+g[1].length,0); const groups = gi.map(k => all[k]);
+    return `<section><h3><b>${r}</b>${esc(name)}<small>${cont?'(계속)':n}</small></h3>${groups.map(([g,items]) => `${g?`<h4>${esc(g)} <small>${items.length}</small></h4>`:''}<ol>${items.map(tocItem).join('')}</ol>`).join('')}</section>`; }).join('')}
+</div>`;
+
+const imgHTML = p => `<div class="page"><img src="${esc(p.img)}" alt="사례 ${esc(p.c.no)} ${esc(p.c.title)} ${p.i+1}쪽" loading="lazy">${
+  p.links.map(([x,y,w,h,u]) => `<a class="hot" href="${esc(u)}" target="_blank" rel="noopener" style="left:${x-.6}%;top:${y-1}%;width:${w+1.2}%;height:${Math.max(h+2,3)}%" aria-label="링크 열기: ${esc(u)}"></a>`).join('')}</div>`;
+
+const pageHTML = p => p.type==='cover' ? coverHTML() : p.type==='toc' ? tocHTML(p.part) : imgHTML(p);
+
+const stage = document.getElementById('stage');
+const slider = document.getElementById('slider');
+const count = document.getElementById('count');
+let slides = [];   // array of arrays of page indexes
+let cur = 0;
+
+function layout(){
+  const wide = innerWidth >= 1000 && innerWidth / (innerHeight - 110) > 1.25;
+  slides = [];
+  if (wide){
+    slides.push([0]);                       // cover alone, like a real book
+    for (let i = 1; i < pages.length; i += 2) slides.push(pages[i+1] ? [i, i+1] : [i]);
+  } else pages.forEach((_, i) => slides.push([i]));
+  stage.innerHTML = slides.map(s => `<section class="slide${s.length>1?' spread':''}">${s.map(i => pageHTML(pages[i])).join('')}</section>`).join('');
+  if (wide) stage.querySelectorAll('.spread .page').forEach(pg => pg.style.height = `min(100%, calc((50vw - 30px) * 1.4145))`);
+  slider.max = slides.length - 1;
+}
+
+const slideOf = pi => slides.findIndex(s => s.includes(pi));
+function go(si, smooth = true){
+  si = Math.max(0, Math.min(slides.length - 1, si));
+  const el = stage.children[si]; if (!el) return;
+  stage.scrollTo({left: el.offsetLeft, behavior: smooth && Math.abs(si - cur) <= 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto'});
+  setCur(si);
+}
+function placeSides(){
+  const sl = stage.children[cur]; if (!sl) return;
+  const pg = sl.querySelectorAll('.page'); if (!pg.length) return;
+  const w = document.getElementById('wrap').getBoundingClientRect();
+  const a = pg[0].getBoundingClientRect(), b = pg[pg.length-1].getBoundingClientRect();
+  const bw = 52, gap = 14, L = a.left - w.left - stage.scrollLeft + sl.offsetLeft, R = b.right - w.left - stage.scrollLeft + sl.offsetLeft;
+  const sp = document.getElementById('sPrev'), sn = document.getElementById('sNext');
+  sp.style.left = Math.max(6, L - bw - gap) + 'px';
+  sn.style.right = 'auto'; sn.style.left = Math.min(w.width - bw - 6, R + gap) + 'px';
+}
+addEventListener('resize', () => setTimeout(placeSides, 120));
+function setCur(si){
+  cur = si; slider.value = si;
+  const s = slides[si], a = pno(s[0]), b = pno(s[s.length-1]);
+  count.textContent = s[0] === 0 ? `표지 / ${pages.length-1}쪽` : `${a}${b!==a ? '–'+b : ''} / ${pages.length-1}쪽`;
+  document.getElementById('prev').disabled = si === 0;
+  document.getElementById('next').disabled = si === slides.length - 1;
+  placeSides();
+  document.getElementById('sPrev').disabled = si === 0;
+  document.getElementById('sNext').disabled = si === slides.length - 1;
+  try { history.replaceState(null, '', '#p' + s[0]); } catch(e) {}
+}
+
+let st;
+stage.addEventListener('scroll', () => { clearTimeout(st); st = setTimeout(() => setCur(Math.round(stage.scrollLeft / stage.clientWidth)), 80); });
+document.getElementById('prev').onclick = () => go(cur - 1);
+document.getElementById('next').onclick = () => go(cur + 1);
+document.getElementById('sPrev').onclick = () => go(cur - 1);
+document.getElementById('sNext').onclick = () => go(cur + 1);
+slider.oninput = () => go(+slider.value, false);
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); go(cur + 1); }
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(cur - 1); }
+  if (e.key === 'Home') go(0); if (e.key === 'End') go(slides.length - 1);
+  if (e.key === 'Escape') drawer.classList.remove('on');
+});
+stage.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) go(slideOf(+b.dataset.go)); });
+
+// drawer TOC
+const drawer = document.getElementById('drawer');
+document.getElementById('dlist').innerHTML =
+  `<li><button data-d="0">표지</button></li><li><button data-d="1">목차</button></li>` +
+  TOC.map(([r,name,groups]) => `<li class="ar">${r}. ${esc(name)}</li>` + groups.flatMap(g=>g[1]).filter(([no]) => start[no] !== undefined)
+    .map(([no,t]) => `<li><button data-d="${start[no]}">사례 ${esc(no)} · ${esc(t)}<small>${pno(start[no])}쪽</small></button></li>`).join('')).join('');
+document.getElementById('menu').onclick = () => { drawer.classList.add('on'); drawer.querySelector('button').focus(); };
+drawer.addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) go(slideOf(+b.dataset.d), false); if (b || e.target === drawer) drawer.classList.remove('on'); });
+
+// start
+let wideNow;
+function rebuild(){ const keep = slides.length ? slides[cur][0] : (parseInt((location.hash.match(/^#p(\d+)$/)||[])[1]) || 0); layout(); go(slideOf(Math.min(keep, pages.length-1)), false); }
+const ro = new ResizeObserver(() => { const w = innerWidth >= 1000 && innerWidth / (innerHeight - 110) > 1.25; if (w !== wideNow) { wideNow = w; rebuild(); } else go(cur, false); });
+ro.observe(document.body);
+addEventListener('hashchange', () => { const m = location.hash.match(/^#p(\d+)$/); if (m) go(slideOf(Math.min(+m[1], pages.length-1)), false); });
+}
+</script>
+</body>
+</html>
