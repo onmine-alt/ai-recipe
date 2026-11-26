@@ -149,7 +149,7 @@ const coverHTML = () => `<div class="page cover"><div class="in">
   <div class="bot"><span class="school">인천디자인고등학교</span></div>
 </div></div>`;
 
-const TOC_SPLIT = [[[0,[0,1]]],[[1,[0,1]],[2,[0]]],[[3,[0]],[4,[0]]]];
+const TOC_SPLIT = [[[0,[0,1]]],[[1,[0,1]]],[[2,[0]],[3,[0]],[4,[0]]]];
 const tocItem = ([no,t,tag]) => { const has = start[no] !== undefined;
   return `<li${has?'':' class="off"'}>${has?`<button data-go="${start[no]}">`:'<div class="row">'}<span class="n">${esc(no)}</span><span class="t">${esc(t)}${tag?` <em>${esc(tag)}</em>`:''}</span><span class="pg">${has?pno(start[no])+'쪽':''}</span>${has?'</button>':'</div>'}</li>`; };
 const tocHTML = part => `<div class="page toc"><div class="in">
